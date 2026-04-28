@@ -22,7 +22,6 @@ import { CSS } from '@dnd-kit/utilities'
 import { openFile } from '@renderer/utils/ipc'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import ConfirmModal from '../base/base-confirm'
-import QRCodeModal from '../base/base-qrcode-modal'
 
 interface Props {
   info: ProfileItem
@@ -76,7 +75,6 @@ const ProfileItem: React.FC<Props> = (props) => {
   const transform = tf ? { x: tf.x, y: tf.y, scaleX: 1, scaleY: 1 } : null
   const [disableSelect, setDisableSelect] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [showQrCode, setShowQrCode] = useState(false)
 
   const menuItems: MenuItem[] = useMemo(() => {
     const list = [
@@ -97,21 +95,10 @@ const ProfileItem: React.FC<Props> = (props) => {
       {
         key: 'open-file',
         label: '打开文件',
-        showDivider: !(info.type === 'remote' && info.url),
+        showDivider: true,
         color: 'default',
         className: ''
       } as MenuItem,
-      ...(info.type === 'remote' && info.url
-        ? [
-            {
-              key: 'qrcode',
-              label: '二维码',
-              showDivider: true,
-              color: 'default',
-              className: ''
-            } as MenuItem
-          ]
-        : []),
       {
         key: 'delete',
         label: '删除',
@@ -144,10 +131,6 @@ const ProfileItem: React.FC<Props> = (props) => {
       }
       case 'open-file': {
         openFile('profile', info.id)
-        break
-      }
-      case 'qrcode': {
-        setShowQrCode(true)
         break
       }
       case 'delete': {
@@ -200,9 +183,6 @@ const ProfileItem: React.FC<Props> = (props) => {
           onClose={() => setOpenInfoEditor(false)}
           updateProfileItem={updateProfileItem}
         />
-      )}
-      {showQrCode && info.url && (
-        <QRCodeModal title={info.name} url={info.url} onClose={() => setShowQrCode(false)} />
       )}
       {confirmOpen && (
         <ConfirmModal

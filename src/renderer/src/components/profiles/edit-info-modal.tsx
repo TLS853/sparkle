@@ -217,6 +217,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
                   />
                 )}
                 {values.type === 'remote' &&
+                  !item.id &&
                   renderField(
                     '订阅地址',
                     <Input
