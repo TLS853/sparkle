@@ -4,7 +4,9 @@ import { readFileSync, writeFileSync } from 'fs'
 const pkg = readFileSync('package.json', 'utf-8')
 let changelog = readFileSync('changelog.md', 'utf-8')
 const { version } = JSON.parse(pkg)
-const downloadUrl = `https://github.com/xishang0128/sparkle/releases/download/${version}`
+// In CI, GITHUB_REPOSITORY is "owner/repo". Fall back to upstream for local runs.
+const repo = process.env.GITHUB_REPOSITORY || 'xishang0128/sparkle'
+const downloadUrl = `https://github.com/${repo}/releases/download/${version}`
 const latest = {
   version,
   changelog

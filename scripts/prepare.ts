@@ -4,6 +4,8 @@ import path from 'path'
 import zlib from 'zlib'
 import { extract } from 'tar'
 import { execSync } from 'child_process'
+import axios from 'axios'
+import { pipeline } from 'stream/promises'
 
 const cwd = process.cwd()
 const TEMP_DIR = path.join(cwd, 'node_modules/.temp')
@@ -241,12 +243,36 @@ async function resolveResource(binInfo) {
  * download file and save to `path`
  */
 async function downloadFile(url, path) {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/octet-stream' }
+  const headers: Record<string, string> = {
+    Accept: 'application/octet-stream',
+    'User-Agent': 'sparkle-prepare-script'
+  }
+  if (process.env.GITHUB_TOKEN) {
+    headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`
+  }
+
+  const response = await axios.get(url, {
+    responseType: 'stream',
+    headers,
+    maxRedirects: 10,
+    timeout: 120_000,
+    validateStatus: (s) => s >= 200 && s < 300
   })
-  const buffer = await response.arrayBuffer()
-  fs.writeFileSync(path, new Uint8Array(buffer))
+
+  const expectedSize = response.headers['content-length']
+    ? parseInt(response.headers['content-length'] as string, 10)
+    : undefined
+
+  await pipeline(response.data, fs.createWriteStream(path))
+
+  if (expectedSize !== undefined) {
+    const actualSize = fs.statSync(path).size
+    if (actualSize !== expectedSize) {
+      throw new Error(
+        `download size mismatch for ${url}: expected ${expectedSize} bytes, got ${actualSize}`
+      )
+    }
+  }
 
   console.log(`[INFO]: download finished "${url}"`)
 }
